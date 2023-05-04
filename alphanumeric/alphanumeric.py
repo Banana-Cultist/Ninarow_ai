@@ -1,16 +1,16 @@
 # so imma do MNIST and then optimize for what it thinks is the most of any number
 from __future__ import annotations
 import timeit
-from typing import *
-import argparse
+from typing import * # type: ignore
 import datetime
+import numpy as np
 import torch
 import torch.backends.mps
 import torch.nn as nn
 # import torch.nn.functional as F
 # import torch.optim as optim
 import torch.utils.data
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms # type: ignore
 from torch.optim.lr_scheduler import StepLR
 import torch.jit
 
@@ -27,6 +27,7 @@ class Net1(nn.Module):
         self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # input has shape [batch_size, channels=1 (greyscale), height=28, width=28]
         # print(x.size())
         # raise ValueError
         x = self.conv1(x)
@@ -42,7 +43,7 @@ class Net1(nn.Module):
         x = self.fc2(x)
         output = nn.functional.log_softmax(x, dim=1)
         return output
-    
+
 # class Net2(nn.Module):
 #     # other network
 #     def __init__(self) -> None:
@@ -76,9 +77,10 @@ def train_epoch(
     epoch_start = timeit.default_timer()
     start = timeit.default_timer()
     for batch_index, (data, target) in enumerate(train_loader):
+        # print(data[0])
+        # raise ValueError
         data, target = data.to(device), target.to(device)
-        # data = data.to(device)
-        # target = target.to(device)
+        
         optimizer.zero_grad(set_to_none=True)
         output = model(data)
         loss = nn.functional.nll_loss(output, target)
@@ -136,7 +138,64 @@ def get_device() -> torch.device:
     else:
         print('using CPU')
         return torch.device('cpu')
+    
+    
 
+def get_data() -> Tuple[Any, Any]:
+    transform = transforms.Compose([
+    # transform = torch.nn.Sequential([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    # transform = torch.jit.script(transform)
+
+    train_dataset = datasets.MNIST(
+        'alphanumeric/data',
+        train=True,
+        transform=transform,
+        download=False,
+    )
+    test_dataset = datasets.MNIST(
+        'alphanumeric/data',
+        train=False,
+        transform=transform,
+        download=False,
+    )
+    return train_dataset, test_dataset
+    
+
+def get_dataloaders(
+    device: torch.device,
+    train_batch_size: int,
+    test_batch_size: int,
+) -> tuple[
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader
+]:
+    
+    train_dataset, test_dataset = get_data()
+    
+    cuda_kwargs: Final[dict[str, Any]] = {
+        'num_workers': 1,
+        'pin_memory': True,
+    } if device.type == 'cuda' else {}
+    
+    train_dataloader: torch.utils.data.DataLoader[datasets.MNIST] = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size = train_batch_size,
+        shuffle = True,
+        **cuda_kwargs
+    )
+    
+    
+    test_dataloader: torch.utils.data.DataLoader[datasets.MNIST] = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size = test_batch_size,
+        shuffle = False,
+        **cuda_kwargs
+    )
+    
+    return train_dataloader, test_dataloader
 
 def train_and_save() -> None:
     train_batch_size: Final[int] = 64
@@ -154,39 +213,11 @@ def train_and_save() -> None:
     log_interval: Final[float] = 1.0 # how many seconds to wait before logging training status
     
     device = get_device()
-    cuda_kwargs: Final[dict[str, Any]] = {
-        'num_workers': 1,
-        'pin_memory': True,
-    } if device.type == 'cuda' else {}
     
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-    
-    train_dataset = datasets.MNIST(
-        '../data',
-        train=True,
-        transform=transform,
-        download=True,
-    )
-    train_dataloader: torch.utils.data.DataLoader[datasets.MNIST] = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size = train_batch_size,
-        shuffle = True,
-        **cuda_kwargs
-    )
-    
-    test_dataset = datasets.MNIST(
-        '../data',
-        train=False,
-        transform=transform,
-    )
-    test_dataloader: torch.utils.data.DataLoader[datasets.MNIST] = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size = test_batch_size,
-        shuffle = False,
-        **cuda_kwargs
+    train_dataloader, test_dataloader =  get_dataloaders(
+        device,
+        train_batch_size,
+        test_batch_size,
     )
 
     model = Net().to(device)
@@ -240,16 +271,32 @@ def load_and_do_stuff(path: str) -> None:
     model.load_state_dict(torch.load(path))
     model.eval()
     
-    print('state_dict:')
-    for param_tensor in model.state_dict():
-        print(param_tensor, '\t', model.state_dict()[param_tensor].size())
+    # print('state_dict:')
+    # for param_tensor in model.state_dict():
+    #     print(param_tensor, '\t', model.state_dict()[param_tensor].size())
     
-    print(model)
+    # print(model)
     
-    # compiled = torch.compile(model)
+    def rand_input() -> torch.Tensor:
+        raise NotImplemented
+        # return transform(np.random.random((1, 28, 28)).astype(np.float32))
+        # return torch.rand([1, 1, 28, 28], device=device)
+    
+    target_n: Final[int] = 0
+    target_tensor: Final[torch.Tensor] = torch.Tensor([target_n]).to(device)
+    # target_tensor: torch.Tensor = torch.zeros([10], device=device)
+    # target_tensor[target_n] = 1
+    for _ in range(2):
+        image = rand_input()
+        # print(image)
+        # raise ValueError
+        output = model(image)
+        loss = nn.functional.nll_loss(output, target_tensor, reduction='sum').item()
+        # loss = nn.functional.nll_loss(output, target_tensor)
+        print(loss)
 
-    
 
 if __name__ == '__main__':
+    # get_data()
     train_and_save()
     # load_and_do_stuff('alphanumeric/mnist_cnn_2023-05-03 22:53:59.242995+00:00.pth')
