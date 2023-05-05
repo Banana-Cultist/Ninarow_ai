@@ -15,14 +15,18 @@ import torch.jit
 import matplotlib.pyplot as plt # type: ignore
 
 class AddGaussianNoise(object):
-    def __init__(self, mean=0., std=1.):
+    def __init__(
+        self,
+        mean: float = 0.0,
+        std: float = 1.0
+    ):
         self.std = std
         self.mean = mean
         
-    def __call__(self, tensor):
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor + torch.randn(tensor.size()) * self.std + self.mean
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
@@ -67,7 +71,7 @@ class Net2(nn.Module):
         # x = x.view(x.size(0), -1)
         x = torch.flatten(x, 1)
         x = self.layer1(x)
-        x = nn.functional.leaky_relu(x, .2)
+        # x = nn.functional.leaky_relu(x, .2)
         # x = nn.functional.relu(x)
         # x = self.layer2(x)
         output = nn.functional.log_softmax(x, dim=1)
@@ -219,7 +223,7 @@ def train_and_save() -> None:
     train_batch_size: Final[int] = 64
     test_batch_size: Final[int] = 1000
     
-    total_epochs: Final[int] = 10
+    total_epochs: Final[int] = 32
     learning_rate: Final[float] = 1.0
     learning_rate_decay_epochs: Final[int] = 1
     learning_rate_decay: Final[float] = 0.7
@@ -281,7 +285,7 @@ def train_and_save() -> None:
 
     torch.save(
         model.state_dict(),
-        f'alphanumeric/leaky_relu_single_layer_noise_100_l2_90_{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
+        f'alphanumeric/single_layer_noise_100_l2_90_epochs_32{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
     )
 
 def draw_layer_for_target(model: Net, target_n: int) -> None:
@@ -361,6 +365,6 @@ if __name__ == '__main__':
     # load_and_do_stuff('alphanumeric/leaky_relu_single_layer_noise_100_l2_90_85.pth') # noisy bc 10 epochs isn't enough, but doesn't look much better than without leaky_relu
     
     # more epochs, noise_100, l2_90, Adadelta, single layer (28*28->10)
-    load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_epoch_20_86.pth') # looks pretty good, only a little noisy
-    
+    # load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_epochs_20_86.pth') # slightly noisy
+    load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_epochs_32_86.pth') # no noise
     
