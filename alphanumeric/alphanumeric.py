@@ -11,7 +11,6 @@ import torch.nn as nn
 # import torch.optim as optim
 import torch.utils.data
 from torchvision import datasets, transforms # type: ignore
-from torch.optim.lr_scheduler import StepLR
 import torch.jit
 import matplotlib.pyplot as plt # type: ignore
 
@@ -68,7 +67,8 @@ class Net2(nn.Module):
         # x = x.view(x.size(0), -1)
         x = torch.flatten(x, 1)
         x = self.layer1(x)
-        # x = nn.functional.leaky_relu(x, .2)
+        x = nn.functional.leaky_relu(x, .2)
+        # x = nn.functional.relu(x)
         # x = self.layer2(x)
         output = nn.functional.log_softmax(x, dim=1)
         # output = nn.functional.sigmoid(x)
@@ -157,15 +157,13 @@ def get_device() -> torch.device:
     else:
         print('using CPU')
         return torch.device('cpu')
-    
-    
 
 def get_data() -> Tuple[Any, Any]:
     transform = transforms.Compose([
     # transform = torch.nn.Sequential([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,)),
-        AddGaussianNoise(0, .1),
+        AddGaussianNoise(0, 1.00),
     ])
     # transform = torch.jit.script(transform)
 
@@ -221,7 +219,7 @@ def train_and_save() -> None:
     train_batch_size: Final[int] = 64
     test_batch_size: Final[int] = 1000
     
-    total_epochs: Final[int] = 20
+    total_epochs: Final[int] = 10
     learning_rate: Final[float] = 1.0
     learning_rate_decay_epochs: Final[int] = 1
     learning_rate_decay: Final[float] = 0.7
@@ -246,10 +244,12 @@ def train_and_save() -> None:
     # model = torch.compile(model) # unsupported for python 3.11
     
     optimizer: torch.optim.Optimizer = torch.optim.Adadelta(
+    # optimizer: torch.optim.Optimizer = torch.optim.Adam(
         model.parameters(),
         lr = learning_rate,
+        weight_decay=.90,
     )
-    scheduler = StepLR(
+    scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer,
         step_size = learning_rate_decay_epochs,
         gamma = learning_rate_decay,
@@ -281,8 +281,18 @@ def train_and_save() -> None:
 
     torch.save(
         model.state_dict(),
-        f'alphanumeric/mnist_net_{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
+        f'alphanumeric/leaky_relu_single_layer_noise_100_l2_90_{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
     )
+
+def draw_layer_for_target(model: Net, target_n: int) -> None:
+    weights = np.array(
+        model.state_dict()['layer1.weight'][target_n].cpu(),
+        dtype=np.float32
+    ).reshape(28, 28)
+    # print(weights)
+    # print(weights.shape)
+    plt.matshow(weights)
+    plt.show()
 
 def load_and_do_stuff(path: str) -> None:
     device = get_device()
@@ -297,26 +307,8 @@ def load_and_do_stuff(path: str) -> None:
     
     print(f'\nmodel:\n{model}\n')
     
-    
-    # target_n = 9
-    # weights = np.array(
-    #     model.state_dict()['layer1.weight'][target_n].cpu(),
-    #     dtype=np.float32
-    # ).reshape(28, 28)
-    # print(weights)
-    # print(weights.shape)
-    # plt.matshow(weights)
-    # plt.show()
-    
     for target_n in range(10):
-        weights = np.array(
-            model.state_dict()['layer1.weight'][target_n].cpu(),
-            dtype=np.float32
-        ).reshape(28, 28)
-        print(weights)
-        print(weights.shape)
-        plt.matshow(weights)
-        plt.show()
+        draw_layer_for_target(model, target_n)
     
     # def rand_input() -> torch.Tensor:
     #     raise NotImplemented
@@ -340,6 +332,35 @@ def load_and_do_stuff(path: str) -> None:
 if __name__ == '__main__':
     # get_data()
     # train_and_save()
-    # load_and_do_stuff('alphanumeric/mnist_cnn_2023-05-03 22:53:59.242995+00:00.pth')
-    # load_and_do_stuff('alphanumeric/linear_mnist_2023-05-04 23:47:10.211544+00:00.pth')
-    load_and_do_stuff('alphanumeric/noise_linear_mnist_net.pth')
+    
+    # lots of things (with noise bc i forgot)
+    # load_and_do_stuff('alphanumeric/noise_leaky_relu_single_layer_92.pth') # 3 looks nice
+    # load_and_do_stuff('alphanumeric/noise_relu_single_layer_84.pth') # 3 failed lmao
+    # load_and_do_stuff('alphanumeric/noise_single_layer_adam_89.pth') # looks noisy
+    # load_and_do_stuff('alphanumeric/noise_single_layer_l2_decay_87.pth') # LOOKS INSANELY GOOD
+    
+    # l2_NN, Adadelta, single layer (28*28->10), (noise_0)
+    # load_and_do_stuff('alphanumeric/single_layer_l2_01_92.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_l2_10_90.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_l2_90_87.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_l2_99_86.pth')
+    
+    # noise_NN, l2_10, Adadelta, single layer (28*28->10)
+    # they kinda get more spread out and not weigh the entire curve equally
+    # load_and_do_stuff('alphanumeric/single_layer_noise_01_l2_10_90.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_noise_10_l2_10_90.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_noise_50_l2_10_90.pth') # too much noise
+    
+    # noise_NN, l2_90, Adadelta, single layer (28*28->10)
+    # load_and_do_stuff('alphanumeric/single_layer_noise_01_l2_90_87.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_noise_10_l2_90_87.pth')
+    # load_and_do_stuff('alphanumeric/single_layer_noise_50_l2_90_87.pth') # starts looking kinda noisy
+    # load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_85.pth')
+    
+    # 10 epochs, leaky_relu
+    # load_and_do_stuff('alphanumeric/leaky_relu_single_layer_noise_100_l2_90_85.pth') # noisy bc 10 epochs isn't enough, but doesn't look much better than without leaky_relu
+    
+    # more epochs, noise_100, l2_90, Adadelta, single layer (28*28->10)
+    load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_epoch_20_86.pth') # looks pretty good, only a little noisy
+    
+    
