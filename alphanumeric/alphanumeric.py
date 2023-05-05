@@ -13,6 +13,18 @@ import torch.utils.data
 from torchvision import datasets, transforms # type: ignore
 from torch.optim.lr_scheduler import StepLR
 import torch.jit
+import matplotlib.pyplot as plt # type: ignore
+
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+        
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
 class Net1(nn.Module):
@@ -44,22 +56,25 @@ class Net1(nn.Module):
         output = nn.functional.log_softmax(x, dim=1)
         return output
 
-# class Net2(nn.Module):
-#     # other network
-#     def __init__(self) -> None:
-#         super(Net2, self).__init__()
-#         self.layer1 = nn.Linear(28*28, 128)
-#         self.layer2 = nn.Linear(128, 10)
+class Net2(nn.Module):
+    # other network
+    def __init__(self) -> None:
+        super(Net2, self).__init__()
+        # self.layer1 = nn.Linear(28*28, 128)
+        # self.layer2 = nn.Linear(128, 10)
+        self.layer1 = nn.Linear(28*28, 10)
 
-#     def forward(self, x: torch.Tensor) -> torch.Tensor:
-#         x = x.view(x.size(0), -1)
-#         x = self.layer1(x)
-#         x = nn.functional.leaky_relu(x, .2)
-#         x = self.layer2(x)
-#         output = nn.functional.log_softmax(x, dim=1)
-#         return output
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x = x.view(x.size(0), -1)
+        x = torch.flatten(x, 1)
+        x = self.layer1(x)
+        # x = nn.functional.leaky_relu(x, .2)
+        # x = self.layer2(x)
+        output = nn.functional.log_softmax(x, dim=1)
+        # output = nn.functional.sigmoid(x)
+        return output
 
-Net = Net1
+Net = Net2
 
 def train_epoch(
     log_interval: float,
@@ -84,6 +99,10 @@ def train_epoch(
         optimizer.zero_grad(set_to_none=True)
         output = model(data)
         loss = nn.functional.nll_loss(output, target)
+        # loss = nn.functional.mse_loss(output, target)
+        # print('output:', output[0])
+        # print('target:', target[0])
+        # print('loss', loss)
         loss.backward()
         optimizer.step()
         
@@ -145,7 +164,8 @@ def get_data() -> Tuple[Any, Any]:
     transform = transforms.Compose([
     # transform = torch.nn.Sequential([
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Normalize((0.1307,), (0.3081,)),
+        AddGaussianNoise(0, .1),
     ])
     # transform = torch.jit.script(transform)
 
@@ -261,7 +281,7 @@ def train_and_save() -> None:
 
     torch.save(
         model.state_dict(),
-        f'alphanumeric/mnist_cnn_{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
+        f'alphanumeric/mnist_net_{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
     )
 
 def load_and_do_stuff(path: str) -> None:
@@ -275,28 +295,51 @@ def load_and_do_stuff(path: str) -> None:
     # for param_tensor in model.state_dict():
     #     print(param_tensor, '\t', model.state_dict()[param_tensor].size())
     
-    # print(model)
+    print(f'\nmodel:\n{model}\n')
     
-    def rand_input() -> torch.Tensor:
-        raise NotImplemented
-        # return transform(np.random.random((1, 28, 28)).astype(np.float32))
-        # return torch.rand([1, 1, 28, 28], device=device)
     
-    target_n: Final[int] = 0
-    target_tensor: Final[torch.Tensor] = torch.Tensor([target_n]).to(device)
-    # target_tensor: torch.Tensor = torch.zeros([10], device=device)
-    # target_tensor[target_n] = 1
-    for _ in range(2):
-        image = rand_input()
-        # print(image)
-        # raise ValueError
-        output = model(image)
-        loss = nn.functional.nll_loss(output, target_tensor, reduction='sum').item()
-        # loss = nn.functional.nll_loss(output, target_tensor)
-        print(loss)
+    # target_n = 9
+    # weights = np.array(
+    #     model.state_dict()['layer1.weight'][target_n].cpu(),
+    #     dtype=np.float32
+    # ).reshape(28, 28)
+    # print(weights)
+    # print(weights.shape)
+    # plt.matshow(weights)
+    # plt.show()
+    
+    for target_n in range(10):
+        weights = np.array(
+            model.state_dict()['layer1.weight'][target_n].cpu(),
+            dtype=np.float32
+        ).reshape(28, 28)
+        print(weights)
+        print(weights.shape)
+        plt.matshow(weights)
+        plt.show()
+    
+    # def rand_input() -> torch.Tensor:
+    #     raise NotImplemented
+    #     # return transform(np.random.random((1, 28, 28)).astype(np.float32))
+    #     # return torch.rand([1, 1, 28, 28], device=device)
+    
+    # target_n: Final[int] = 0
+    # target_tensor: Final[torch.Tensor] = torch.Tensor([target_n]).to(device)
+    # # target_tensor: torch.Tensor = torch.zeros([10], device=device)
+    # # target_tensor[target_n] = 1
+    # for _ in range(2):
+    #     image = rand_input()
+    #     # print(image)
+    #     # raise ValueError
+    #     output = model(image)
+    #     loss = nn.functional.nll_loss(output, target_tensor, reduction='sum').item()
+    #     # loss = nn.functional.nll_loss(output, target_tensor)
+    #     print(loss)
 
 
 if __name__ == '__main__':
     # get_data()
-    train_and_save()
+    # train_and_save()
     # load_and_do_stuff('alphanumeric/mnist_cnn_2023-05-03 22:53:59.242995+00:00.pth')
+    # load_and_do_stuff('alphanumeric/linear_mnist_2023-05-04 23:47:10.211544+00:00.pth')
+    load_and_do_stuff('alphanumeric/noise_linear_mnist_net.pth')
