@@ -59,7 +59,7 @@ def load_and_do_stuff(path: str) -> None:
 
 
 if __name__ == '__main__':
-    raise NotImplemented
+    load_and_do_stuff('total_epochs_32_gamma_70_random_seed_1_weight_decay_90_noise_std_100_eval_86.pth')
 
 
 # old file names
@@ -93,4 +93,3 @@ if __name__ == '__main__':
 # more epochs, noise_100, l2_90, Adadelta, single layer (28*28->10)
 # load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_epochs_20_86.pth') # slightly noisy
 # load_and_do_stuff('alphanumeric/single_layer_noise_100_l2_90_epochs_32_86.pth') # no noise
-    

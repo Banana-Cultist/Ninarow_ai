@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.utils.data
 from torchvision import datasets, transforms # type: ignore
 import torch.jit
-import matplotlib.pyplot as plt # type: ignore
+# import matplotlib.pyplot as plt # type: ignore
 from my_utils import *
 
 class AddGaussianNoise(object):
@@ -172,7 +172,7 @@ def train_and_save(
     gamma_{int(100*learning_rate_decay)}_
     random_seed_{random_seed}_
     weight_decay_{int(100*weight_decay)}_
-    noise_std_{int(noise_std)}
+    noise_std_{int(100*noise_std)}
     '''.replace('\n', '').replace('\t', '').replace(' ', '')
     print(f'training {model_name}')
     # raise ValueError
@@ -244,5 +244,5 @@ def train_and_save(
 
 if __name__ == '__main__':
     train_and_save(
-        
+        total_epochs=32
     )

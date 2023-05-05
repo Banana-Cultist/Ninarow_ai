@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.utils.data
 from torchvision import datasets, transforms # type: ignore
 import torch.jit
-import matplotlib.pyplot as plt # type: ignore
+# import matplotlib.pyplot as plt # type: ignore
 
 
 
