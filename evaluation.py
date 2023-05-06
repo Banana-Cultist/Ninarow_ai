@@ -59,7 +59,7 @@ def load_and_do_stuff(path: str) -> None:
 
 
 if __name__ == '__main__':
-    load_and_do_stuff('total_epochs_32_gamma_70_random_seed_1_weight_decay_90_noise_std_100_eval_86.pth')
+    load_and_do_stuff('models/total_epochs_32_gamma_70_random_seed_1_weight_decay_90_noise_std_100_eval_86.pth')
 
 
 # old file names

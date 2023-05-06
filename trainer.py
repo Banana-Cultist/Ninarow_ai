@@ -97,12 +97,16 @@ def test(
     return correct / dataset_size
 
 def get_data(noise_std: float) -> Tuple[Any, Any]:
-    transform = transforms.Compose([
-    # transform = torch.nn.Sequential([
+    transforms_list = [
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,)),
-        AddGaussianNoise(0, noise_std),
-    ])
+    ]
+    if noise_std != 0.0:
+        transforms_list.append(
+            AddGaussianNoise(0, noise_std)
+        )
+
+    transform = transforms.Compose(transforms_list)
     # transform = torch.jit.script(transform)
 
     train_dataset = datasets.MNIST(
@@ -159,7 +163,7 @@ def train_and_save(
     learning_rate_decay: float = 0.7,
     random_seed: Optional[int] = 1,
     weight_decay: float = .9,
-    noise_std: float = 1.0
+    noise_std: float = 0.0
 ) -> None:
     train_batch_size: int = 64
     test_batch_size: int = 1000
@@ -237,12 +241,17 @@ def train_and_save(
     #     f'alphanumeric/single_layer_noise_100_l2_90_epochs_32{str(datetime.datetime.now(datetime.timezone.utc))}.pth'
     # )
     
+    file_name = f'models/{model_name}_eval_{int(100*test_correct)}.pth'
     torch.save(
         model.state_dict(),
-        f'models/{model_name}_eval_{int(100*test_correct)}.pth'
+        file_name
     )
+    with open('model_index.txt', mode='a') as f:
+        f.write(f'{file_name}\n')
+    print(f'model saved at:\n{file_name}')
 
 if __name__ == '__main__':
     train_and_save(
-        total_epochs=32
+        total_epochs=1,
+        noise_std=0
     )
