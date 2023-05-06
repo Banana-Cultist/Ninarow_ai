@@ -7,7 +7,7 @@ import torch
 import torch.backends.mps
 import torch.nn as nn
 import torch.utils.data
-from torchvision import datasets, transforms # type: ignore
+# from torchvision import datasets, transforms # type: ignore
 import torch.jit
 # import matplotlib.pyplot as plt # type: ignore
 
@@ -46,17 +46,27 @@ class _Net2(nn.Module):
     # other network
     def __init__(self) -> None:
         super(_Net2, self).__init__()
-        # self.layer1 = nn.Linear(28*28, 128)
-        # self.layer2 = nn.Linear(128, 10)
         self.layer1 = nn.Linear(28*28, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x = x.view(x.size(0), -1)
         x = torch.flatten(x, 1)
         x = self.layer1(x)
-        # x = nn.functional.leaky_relu(x, .2)
-        # x = nn.functional.relu(x)
-        # x = self.layer2(x)
+        output = nn.functional.log_softmax(x, dim=1)
+        # output = nn.functional.sigmoid(x)
+        return output
+
+class _Net3(nn.Module):
+    # other network
+    def __init__(self) -> None:
+        super(_Net3, self).__init__()
+        self.layer1 = nn.Linear(28*28, 128)
+        self.layer2 = nn.Linear(128, 10)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.flatten(x, 1)
+        x = self.layer1(x)
+        x = nn.functional.leaky_relu(x, .2)
+        x = self.layer2(x)
         output = nn.functional.log_softmax(x, dim=1)
         # output = nn.functional.sigmoid(x)
         return output

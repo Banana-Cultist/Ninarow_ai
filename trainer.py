@@ -159,6 +159,7 @@ def get_dataloaders(
     return train_dataloader, test_dataloader
 
 def train_and_save(
+    type: str,
     total_epochs: int = 10,
     learning_rate_decay: float = 0.7,
     random_seed: Optional[int] = 1,
@@ -172,6 +173,7 @@ def train_and_save(
     log_interval: float = 1.0 # how many seconds to wait before logging training status
 
     model_name: Final[str] = f'''
+    {type}_
     total_epochs_{total_epochs}_
     gamma_{int(100*learning_rate_decay)}_
     random_seed_{random_seed}_
@@ -221,7 +223,8 @@ def train_and_save(
     start = timeit.default_timer()
     test_correct: Optional[float] = None
     for cur_epoch in range(total_epochs):
-        print(f'\ntraining epoch {cur_epoch+1}')
+        print(f'\ntraining epoch: {cur_epoch+1}')
+        print(f'learning rate: {scheduler.get_last_lr()}')
         train_epoch(
             log_interval,
             model,
@@ -235,6 +238,15 @@ def train_and_save(
     end = timeit.default_timer()
     print(f'time for training: {end-start}')
     assert test_correct is not None
+    
+    
+    print('training set test:')
+    test(
+        model,
+        device,
+        train_dataloader,
+    )
+    # print(f'train set accuracy: {100*train_correct:.1f}%')
     
     # torch.save(
     #     model.state_dict(),
@@ -252,6 +264,9 @@ def train_and_save(
 
 if __name__ == '__main__':
     train_and_save(
-        total_epochs=1,
-        noise_std=0
+        'hidden_0',
+        total_epochs=1024,
+        learning_rate_decay=.99,
+        weight_decay=.5,
+        # noise_std=0,
     )

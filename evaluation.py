@@ -12,9 +12,19 @@ import torch.jit
 import matplotlib.pyplot as plt # type: ignore
 from my_utils import *
 
-def draw_layer_for_target(model: Net, target_n: int) -> None:
+def draw_tensor(tensor: torch.Tensor) -> None:
+    array = np.array(
+        tensor,
+        dtype=np.float32
+    ).reshape(28, 28)
+    # print(weights)
+    # print(weights.shape)
+    plt.matshow(array)
+    plt.show()
+
+def draw_layer_n(model: Net, n: int) -> None:
     weights = np.array(
-        model.state_dict()['layer1.weight'][target_n].cpu(),
+        model.state_dict()['layer1.weight'][n].cpu(),
         dtype=np.float32
     ).reshape(28, 28)
     # print(weights)
@@ -35,8 +45,8 @@ def load_and_do_stuff(path: str) -> None:
     
     print(f'\nmodel:\n{model}\n')
     
-    for target_n in range(10):
-        draw_layer_for_target(model, target_n)
+    for weights in model.state_dict()['layer1.weight'].cpu():
+        draw_tensor(weights)
     
     # def rand_input() -> torch.Tensor:
     #     raise NotImplemented
@@ -59,7 +69,10 @@ def load_and_do_stuff(path: str) -> None:
 
 
 if __name__ == '__main__':
-    load_and_do_stuff('models/total_epochs_32_gamma_70_random_seed_1_weight_decay_90_noise_std_100_eval_86.pth')
+    # load_and_do_stuff('models/hidden_10_total_epochs_10_gamma_70_random_seed_1_weight_decay_90_noise_std_0_eval_60.pth') # 28*28 -> 10 -> 10 # looks kinda weird ngl
+    # load_and_do_stuff('models/hidden_32_total_epochs_10_gamma_70_random_seed_1_weight_decay_10_noise_std_0_eval_90.pth') # kinda interesting but a lot of duplicates
+    # load_and_do_stuff('models/hidden_128_total_epochs_10_gamma_70_random_seed_1_weight_decay_10_noise_std_0_eval_90.pth') # lots of duplicates
+    load_and_do_stuff('models/hidden_0_total_epochs_1024_gamma_99_random_seed_1_weight_decay_50_noise_std_0_eval_88.pth') # THIS IS THE BEST ONE
 
 
 # old file names
