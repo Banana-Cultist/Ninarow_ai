@@ -12,84 +12,35 @@ import torch.jit
 import matplotlib.pyplot as plt # type: ignore
 from my_utils import *
 
-def draw_tensor(tensor: torch.Tensor) -> None:
-    array = np.array(
-        tensor.detach(),
-        dtype=np.float32
-    ).reshape(28, 28)
-    # print(weights)
-    # print(weights.shape)
-    plt.matshow(array)
-    plt.show()
-
-def draw_layer_n(model: Net, n: int) -> None:
+def draw_layer_for_target(model: Net, target_n: int) -> None:
     weights = np.array(
-        model.state_dict()['layer1.weight'][n].cpu(),
+        model.state_dict()['layer1.weight'][target_n].cpu(),
         dtype=np.float32
     ).reshape(28, 28)
     # print(weights)
     # print(weights.shape)
-    plt.matshow(weights)
-    plt.show()
-    
-def optimize_n(
-    device: torch.device,
-    model: Net,
-    n: int
-) -> torch.Tensor:
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,)),
-    ])
-    def get_rand_data() -> torch.Tensor:
-        # return transform(
-        #     torch.randint(0, 255, (1, 28, 28), dtype=torch.float32)
-        # )
-        rand_uint8: np.ndarray = np.random.randint(0, 255, (1, 28, 28), dtype=np.uint8)
-        # rand_uint8.resize((1, 28, 28))
-        transformed: torch.Tensor = transform(rand_uint8)
-        transformed.resize((1, 28, 28))
-        return transformed
-        
-        
-    
-    model.to('cpu')
-    
-    data = torch.nn.Parameter(
-        get_rand_data(),
-        requires_grad=True
-    )
-    # data.to(device)
-    # print(data)
-    # raise ValueError
-    model.requires_grad_(False)
-    optimizer = torch.optim.SGD(
-        [data],
-        lr = .1,
-        # weight_decay=.99,
-    )
-    # mse = torch.nn.MSELoss()
-    # target = torch.zeros(1, 10)
-    # target[0][n] = 1
-    # target = torch.zeros(10)
-    # target[n] = 1
-    target = torch.tensor([n])
-    
-    for epoch in range(10000):
-        output = model(data)
-        # loss = mse(output, target)
-        loss = nn.functional.nll_loss(output, target)
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-        if epoch % 1000 == 0:
-            print(f'loss: {loss}')
+    draw_layer_for_target.counter += 1
+    plt.subplot(2, 5, draw_layer_for_target.counter)
+    plt.matshow(weights, fignum=False)
+draw_layer_for_target.counter = 0
 
-    return data
+
+def load_and_do_stuff(path: str) -> None:
+    device = get_device()
+
+    model = Net().to(device)
+    model.load_state_dict(torch.load(path))
+    model.eval()
     
+    # print('state_dict:')
+    # for param_tensor in model.state_dict():
+    #     print(param_tensor, '\t', model.state_dict()[param_tensor].size())
     
+    print(f'\nmodel:\n{model}\n')
     
-    
+    for target_n in range(10):
+        draw_layer_for_target(model, target_n)
+    plt.show()
     # def rand_input() -> torch.Tensor:
     #     raise NotImplemented
     #     # return transform(np.random.random((1, 28, 28)).astype(np.float32))
@@ -107,45 +58,11 @@ def optimize_n(
     #     loss = nn.functional.nll_loss(output, target_tensor, reduction='sum').item()
     #     # loss = nn.functional.nll_loss(output, target_tensor)
     #     print(loss)
-    
-
-    # target = torch.()
-    
-
-def load_and_do_stuff(path: str) -> None:
-    device = get_device()
-
-    model = Net().to(device)
-    model.load_state_dict(torch.load(path))
-    model.eval()
-    
-    # print('state_dict:')
-    # for param_tensor in model.state_dict():
-    #     print(param_tensor, '\t', model.state_dict()[param_tensor].size())
-    
-    print(f'\nmodel:\n{model}\n')
-    
-    for weights in model.state_dict()['layer1.weight'].cpu():
-        draw_tensor(weights)
-    
-    # for n in range(10):
-        # data = optimize_n(
-        #     device,
-        #     model,
-        #     n,
-        # )
-        # output = model(data)
-        # print(output)
-        # draw_tensor(data)
-    
 
 
 
 if __name__ == '__main__':
-    # load_and_do_stuff('models/hidden_10_total_epochs_10_gamma_70_random_seed_1_weight_decay_90_noise_std_0_eval_60.pth') # 28*28 -> 10 -> 10 # looks kinda weird ngl
-    # load_and_do_stuff('models/hidden_32_total_epochs_10_gamma_70_random_seed_1_weight_decay_10_noise_std_0_eval_90.pth') # kinda interesting but a lot of duplicates
-    # load_and_do_stuff('models/hidden_128_total_epochs_10_gamma_70_random_seed_1_weight_decay_10_noise_std_0_eval_90.pth') # lots of duplicates
-    load_and_do_stuff('models/hidden_0_total_epochs_1024_gamma_99_random_seed_1_weight_decay_50_noise_std_0_eval_88.pth') # THIS IS THE BEST ONE
+    load_and_do_stuff('models/total_epochs_32_gamma_70_random_seed_1_weight_decay_90_noise_std_100_eval_86.pth')
 
 
 # old file names
