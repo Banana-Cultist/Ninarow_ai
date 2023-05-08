@@ -12,17 +12,22 @@ import torch.jit
 import matplotlib.pyplot as plt # type: ignore
 from my_utils import *
 
-def draw_layer_for_target(model: Net, target_n: int) -> None:
-    weights = np.array(
-        model.state_dict()['layer1.weight'][target_n].cpu(),
-        dtype=np.float32
-    ).reshape(28, 28)
-    # print(weights)
-    # print(weights.shape)
-    draw_layer_for_target.counter += 1
-    plt.subplot(2, 5, draw_layer_for_target.counter)
-    plt.matshow(weights, fignum=False)
-draw_layer_for_target.counter = 0
+def plot_tensor(subplot: int, tensor: torch.Tensor) -> None:
+    assert tensor.shape == (28, 28)
+    plt.subplot(2, 5, subplot)
+    plt.matshow(
+        np.array(
+            tensor,
+            dtype=np.float32,
+        ),
+        fignum=False,
+    )
+    
+
+def plot_tensors(tensors: torch.Tensor) -> None:
+    tensors = tensors.cpu()
+    for subplot, tensor in enumerate(tensors):
+        plot_tensor(subplot+1, tensor.reshape(28, 28))
 
 
 def load_and_do_stuff(path: str) -> None:
@@ -38,9 +43,9 @@ def load_and_do_stuff(path: str) -> None:
     
     print(f'\nmodel:\n{model}\n')
     
-    for target_n in range(10):
-        draw_layer_for_target(model, target_n)
+    plot_tensors(model.state_dict()['layer1.weight'])
     plt.show()
+    
     # def rand_input() -> torch.Tensor:
     #     raise NotImplemented
     #     # return transform(np.random.random((1, 28, 28)).astype(np.float32))
