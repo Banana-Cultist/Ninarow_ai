@@ -46,7 +46,6 @@ def train_epoch(
         # print(data[0])
         # raise ValueError
         data, target = data.to(device), target.to(device)
-        
         optimizer.zero_grad(set_to_none=True)
         output = model(data)
         loss = nn.functional.nll_loss(output, target)
@@ -89,6 +88,8 @@ def test(
             test_loss += nn.functional.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
+            print(f'target: {target[0]}')
+            print(f'output: {output[0]}')
 
     test_loss /= dataset_size
     print(
@@ -115,6 +116,8 @@ def get_data(noise_std: float) -> Tuple[Any, Any]:
         transform=transform,
         download=False,
     )
+    # print(train_dataset.data[0])
+    # raise ValueError
     test_dataset = datasets.MNIST(
         'data',
         train=False,
@@ -265,8 +268,8 @@ def train_and_save(
 if __name__ == '__main__':
     train_and_save(
         'hidden_0',
-        total_epochs=1024,
-        learning_rate_decay=.99,
+        total_epochs=16,
+        learning_rate_decay=.9,
         weight_decay=.5,
         # noise_std=0,
     )

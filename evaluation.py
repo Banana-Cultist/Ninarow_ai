@@ -14,7 +14,7 @@ from my_utils import *
 
 def draw_tensor(tensor: torch.Tensor) -> None:
     array = np.array(
-        tensor,
+        tensor.detach(),
         dtype=np.float32
     ).reshape(28, 28)
     # print(weights)
@@ -31,22 +31,64 @@ def draw_layer_n(model: Net, n: int) -> None:
     # print(weights.shape)
     plt.matshow(weights)
     plt.show()
+    
+def optimize_n(
+    device: torch.device,
+    model: Net,
+    n: int
+) -> torch.Tensor:
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,)),
+    ])
+    def get_rand_data() -> torch.Tensor:
+        # return transform(
+        #     torch.randint(0, 255, (1, 28, 28), dtype=torch.float32)
+        # )
+        rand_uint8: np.ndarray = np.random.randint(0, 255, (1, 28, 28), dtype=np.uint8)
+        # rand_uint8.resize((1, 28, 28))
+        transformed: torch.Tensor = transform(rand_uint8)
+        transformed.resize((1, 28, 28))
+        return transformed
+        
+        
+    
+    model.to('cpu')
+    
+    data = torch.nn.Parameter(
+        get_rand_data(),
+        requires_grad=True
+    )
+    # data.to(device)
+    # print(data)
+    # raise ValueError
+    model.requires_grad_(False)
+    optimizer = torch.optim.SGD(
+        [data],
+        lr = .1,
+        # weight_decay=.99,
+    )
+    # mse = torch.nn.MSELoss()
+    # target = torch.zeros(1, 10)
+    # target[0][n] = 1
+    # target = torch.zeros(10)
+    # target[n] = 1
+    target = torch.tensor([n])
+    
+    for epoch in range(10000):
+        output = model(data)
+        # loss = mse(output, target)
+        loss = nn.functional.nll_loss(output, target)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        if epoch % 1000 == 0:
+            print(f'loss: {loss}')
 
-def load_and_do_stuff(path: str) -> None:
-    device = get_device()
-
-    model = Net().to(device)
-    model.load_state_dict(torch.load(path))
-    model.eval()
+    return data
     
-    # print('state_dict:')
-    # for param_tensor in model.state_dict():
-    #     print(param_tensor, '\t', model.state_dict()[param_tensor].size())
     
-    print(f'\nmodel:\n{model}\n')
     
-    for weights in model.state_dict()['layer1.weight'].cpu():
-        draw_tensor(weights)
     
     # def rand_input() -> torch.Tensor:
     #     raise NotImplemented
@@ -65,6 +107,37 @@ def load_and_do_stuff(path: str) -> None:
     #     loss = nn.functional.nll_loss(output, target_tensor, reduction='sum').item()
     #     # loss = nn.functional.nll_loss(output, target_tensor)
     #     print(loss)
+    
+
+    # target = torch.()
+    
+
+def load_and_do_stuff(path: str) -> None:
+    device = get_device()
+
+    model = Net().to(device)
+    model.load_state_dict(torch.load(path))
+    model.eval()
+    
+    # print('state_dict:')
+    # for param_tensor in model.state_dict():
+    #     print(param_tensor, '\t', model.state_dict()[param_tensor].size())
+    
+    print(f'\nmodel:\n{model}\n')
+    
+    for weights in model.state_dict()['layer1.weight'].cpu():
+        draw_tensor(weights)
+    
+    # for n in range(10):
+        # data = optimize_n(
+        #     device,
+        #     model,
+        #     n,
+        # )
+        # output = model(data)
+        # print(output)
+        # draw_tensor(data)
+    
 
 
 
