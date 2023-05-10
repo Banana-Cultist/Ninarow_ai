@@ -22,12 +22,70 @@ def plot_tensor(subplot: int, tensor: torch.Tensor) -> None:
         ),
         fignum=False,
     )
-    
+
 
 def plot_tensors(tensors: torch.Tensor) -> None:
     tensors = tensors.cpu()
     for subplot, tensor in enumerate(tensors):
         plot_tensor(subplot+1, tensor.reshape(28, 28))
+        
+
+# def optimize_n(
+#     device: torch.device,
+#     model: Net,
+#     n: int
+# ) -> torch.Tensor:
+#     transform = transforms.Compose([
+#         transforms.ToTensor(),
+#         transforms.Normalize((0.1307,), (0.3081,)),
+#     ])
+#     def get_rand_data() -> torch.Tensor:
+#         # return transform(
+#         #     torch.randint(0, 255, (1, 28, 28), dtype=torch.float32)
+#         # )
+#         rand_uint8: np.ndarray = np.random.randint(0, 255, (1, 28, 28), dtype=np.uint8)
+#         # rand_uint8.resize((1, 28, 28))
+#         transformed: torch.Tensor = transform(rand_uint8)
+#         transformed.resize((1, 28, 28))
+#         return transformed
+        
+        
+    
+#     model.to('cpu')
+    
+#     data = torch.nn.Parameter(
+#         get_rand_data(),
+#         requires_grad=True
+#     )
+#     # data.to(device)
+#     # print(data)
+#     # raise ValueError
+#     model.requires_grad_(False)
+#     optimizer = torch.optim.SGD(
+#         [data],
+#         lr = .1,
+#         # weight_decay=.99,
+#     )
+#     # mse = torch.nn.MSELoss()
+#     # target = torch.zeros(1, 10)
+#     # target[0][n] = 1
+#     # target = torch.zeros(10)
+#     # target[n] = 1
+#     target = torch.tensor([n])
+    
+#     for epoch in range(10000):
+#         output = model(data)
+#         # loss = mse(output, target)
+#         loss = nn.functional.nll_loss(output, target)
+#         loss.backward()
+#         optimizer.step()
+#         optimizer.zero_grad()
+#         if epoch % 1000 == 0:
+#             print(f'loss: {loss}')
+
+#     return data
+    
+
 
 
 def load_and_do_stuff(path: str) -> None:
